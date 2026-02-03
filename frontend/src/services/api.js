@@ -1,8 +1,26 @@
 import axios from "axios";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+// Determine API URL based on environment
+const getApiUrl = () => {
+  // Check for Vite environment variable first
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  
+  // Production fallback - detect if running on Vercel
+  if (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app')) {
+    return 'https://smartmess-backend.onrender.com/api';
+  }
+  
+  // Local development fallback
+  return 'http://localhost:5000/api';
+};
+
+const API_BASE_URL = getApiUrl();
 const AUTH_STORAGE_KEY = "smartmess_auth";
+
+// Log API URL for debugging (remove in production if needed)
+console.log('🔗 API URL:', API_BASE_URL);
 
 const api = axios.create({
   baseURL: API_BASE_URL,
