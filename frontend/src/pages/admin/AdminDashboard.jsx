@@ -8,80 +8,85 @@ import {
   FiTrendingUp,
   FiPlus,
   FiBarChart2,
+  FiAlertCircle,
+  FiCheckCircle,
+  FiBell,
+  FiClipboard,
 } from "react-icons/fi";
 import AdminLayout from "../../components/layout/AdminLayout";
 import Card from "../../components/ui/Card";
 import Button from "../../components/ui/Button";
+import Loader from "../../components/ui/Loader";
+import { adminAPI } from "../../services/api";
 import styles from "./AdminDashboard.module.css";
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState({
     totalStudents: 0,
+    verifiedStudents: 0,
     totalRatings: 0,
     avgRating: 0,
     todayRatings: 0,
+    pendingComplaints: 0,
+    totalMenus: 0,
   });
-  const [recentRatings, setRecentRatings] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Mock data - replace with actual API calls
-    setStats({
-      totalStudents: 245,
-      totalRatings: 1832,
-      avgRating: 4.2,
-      todayRatings: 67,
-    });
-    setRecentRatings([
-      {
-        id: 1,
-        student: "John Doe",
-        mealType: "lunch",
-        rating: 5,
-        time: "10 mins ago",
-      },
-      {
-        id: 2,
-        student: "Jane Smith",
-        mealType: "breakfast",
-        rating: 4,
-        time: "25 mins ago",
-      },
-      {
-        id: 3,
-        student: "Mike Johnson",
-        mealType: "lunch",
-        rating: 3,
-        time: "1 hour ago",
-      },
-    ]);
+    fetchDashboardStats();
   }, []);
+
+  const fetchDashboardStats = async () => {
+    try {
+      const response = await adminAPI.getDashboardStats();
+      if (response.data.success) {
+        setStats(response.data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching dashboard stats:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const statCards = [
     {
       label: "Total Students",
       value: stats.totalStudents,
+      subValue: `${stats.verifiedStudents} verified`,
       icon: FiUsers,
       color: "#3b82f6",
     },
     {
       label: "Total Ratings",
       value: stats.totalRatings,
+      subValue: `${stats.todayRatings} today`,
       icon: FiStar,
       color: "#f59e0b",
     },
     {
       label: "Average Rating",
-      value: stats.avgRating.toFixed(1),
+      value: stats.avgRating,
+      subValue: "out of 5",
       icon: FiTrendingUp,
       color: "#22c55e",
     },
     {
-      label: "Today's Ratings",
-      value: stats.todayRatings,
-      icon: FiBarChart2,
-      color: "#8b5cf6",
+      label: "Pending Complaints",
+      value: stats.pendingComplaints,
+      subValue: "needs attention",
+      icon: FiAlertCircle,
+      color: "#ef4444",
     },
   ];
+
+  if (loading) {
+    return (
+      <AdminLayout>
+        <Loader fullScreen />
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>
@@ -113,6 +118,9 @@ const AdminDashboard = () => {
               <div className={styles.statInfo}>
                 <span className={styles.statValue}>{stat.value}</span>
                 <span className={styles.statLabel}>{stat.label}</span>
+                {stat.subValue && (
+                  <span className={styles.statSubValue}>{stat.subValue}</span>
+                )}
               </div>
             </Card>
           ))}
@@ -139,45 +147,87 @@ const AdminDashboard = () => {
               <Card className={styles.actionCard} hover>
                 <FiUsers className={styles.actionIcon} />
                 <h3>Manage Students</h3>
-                <p>View registered students</p>
+                <p>Add & verify students</p>
+              </Card>
+            </Link>
+            <Link to="/admin/complaints">
+              <Card className={styles.actionCard} hover>
+                <FiAlertCircle className={styles.actionIcon} />
+                <h3>View Complaints</h3>
+                <p>{stats.pendingComplaints} pending</p>
+              </Card>
+            </Link>
+            <Link to="/admin/attendance">
+              <Card className={styles.actionCard} hover>
+                <FiClipboard className={styles.actionIcon} />
+                <h3>Meal Attendance</h3>
+                <p>Track who's eating</p>
+              </Card>
+            </Link>
+            <Link to="/admin/notifications">
+              <Card className={styles.actionCard} hover>
+                <FiBell className={styles.actionIcon} />
+                <h3>Send Notifications</h3>
+                <p>Announce to students</p>
               </Card>
             </Link>
           </div>
         </section>
 
         <section className={styles.section}>
-          <div className={styles.sectionHeader}>
-            <h2>Recent Ratings</h2>
-            <Link to="/admin/ratings" className={styles.viewAll}>
-              View All →
-            </Link>
+          <h2>System Overview</h2>
+          <div className={styles.overviewGrid}>
+            <Card className={styles.overviewCard}>
+              <h3>
+                <FiCheckCircle /> Students Overview
+              </h3>
+              <div className={styles.overviewStats}>
+                <div className={styles.overviewItem}>
+                  <span className={styles.overviewValue}>
+                    {stats.totalStudents}
+                  </span>
+                  <span className={styles.overviewLabel}>Total</span>
+                </div>
+                <div className={styles.overviewItem}>
+                  <span className={styles.overviewValue}>
+                    {stats.verifiedStudents}
+                  </span>
+                  <span className={styles.overviewLabel}>Verified</span>
+                </div>
+                <div className={styles.overviewItem}>
+                  <span className={styles.overviewValue}>
+                    {stats.totalStudents - stats.verifiedStudents}
+                  </span>
+                  <span className={styles.overviewLabel}>Pending</span>
+                </div>
+              </div>
+            </Card>
+            <Card className={styles.overviewCard}>
+              <h3>
+                <FiBarChart2 /> Ratings Overview
+              </h3>
+              <div className={styles.overviewStats}>
+                <div className={styles.overviewItem}>
+                  <span className={styles.overviewValue}>
+                    {stats.totalRatings}
+                  </span>
+                  <span className={styles.overviewLabel}>Total</span>
+                </div>
+                <div className={styles.overviewItem}>
+                  <span className={styles.overviewValue}>
+                    {stats.todayRatings}
+                  </span>
+                  <span className={styles.overviewLabel}>Today</span>
+                </div>
+                <div className={styles.overviewItem}>
+                  <span className={styles.overviewValue}>
+                    {stats.avgRating}
+                  </span>
+                  <span className={styles.overviewLabel}>Avg Rating</span>
+                </div>
+              </div>
+            </Card>
           </div>
-          <Card className={styles.tableCard}>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th>Student</th>
-                  <th>Meal</th>
-                  <th>Rating</th>
-                  <th>Time</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentRatings.map((rating) => (
-                  <tr key={rating.id}>
-                    <td>{rating.student}</td>
-                    <td className={styles.mealType}>{rating.mealType}</td>
-                    <td>
-                      <span className={styles.ratingBadge}>
-                        ⭐ {rating.rating}
-                      </span>
-                    </td>
-                    <td className={styles.time}>{rating.time}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </Card>
         </section>
       </div>
     </AdminLayout>

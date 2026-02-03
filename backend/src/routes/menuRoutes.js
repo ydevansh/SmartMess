@@ -101,4 +101,56 @@ router.post("/", async (req, res) => {
   }
 });
 
+// Get all menus (Admin)
+router.get("/", async (req, res) => {
+  try {
+    const { data } = await supabase
+      .from("menus")
+      .select("*")
+      .order("date", { ascending: false })
+      .limit(30);
+    res.json({ success: true, menus: data || [] });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Update menu
+router.put("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { date, breakfast, lunch, snacks, dinner, special_note } = req.body;
+    const day = getDayName(date);
+
+    const { data, error } = await supabase
+      .from("menus")
+      .update({ date, day, breakfast, lunch, snacks, dinner, special_note, updated_at: new Date().toISOString() })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    res.json({ success: true, menu: data });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Delete menu
+router.delete("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const { error } = await supabase
+      .from("menus")
+      .delete()
+      .eq("id", id);
+
+    if (error) throw error;
+    res.json({ success: true, message: "Menu deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 module.exports = router;

@@ -1,70 +1,107 @@
 // Admin Routes - Define URL endpoints for admin operations
 
-const express = require('express');
-const router = express.Router();  // Create a router instance
+const express = require("express");
+const router = express.Router();
 
 // Import controller functions
-const { 
-  addStudent, 
-  verifyStudent, 
-  getAllStudents, 
-  addMenu 
-} = require('../controllers/adminController');
+const {
+  getDashboardStats,
+  addStudent,
+  verifyStudent,
+  getAllStudents,
+  deleteStudent,
+  toggleStudentStatus,
+  addMenu,
+  updateMenu,
+  deleteMenu,
+  getAllRatings,
+  getRatingStats,
+  getAllComplaints,
+  updateComplaintStatus,
+  sendNotification,
+  getNotifications,
+  getMealAttendance,
+  getAttendanceStats,
+} = require("../controllers/adminController");
+
+// ============================================
+// DASHBOARD ROUTES
+// ============================================
+
+// GET /api/admin/stats - Get dashboard statistics
+router.get("/stats", getDashboardStats);
 
 // ============================================
 // STUDENT MANAGEMENT ROUTES
 // ============================================
 
 // POST /api/admin/students - Add new student
-// Example request body:
-// {
-//   "name": "John Doe",
-//   "email": "john@example.com",
-//   "rollNumber": "2021001",
-//   "password": "password123",
-//   "hostelName": "Hostel A",
-//   "roomNumber": "101",
-//   "phoneNumber": "9876543210"
-// }
-router.post('/students', addStudent);
+router.post("/students", addStudent);
 
 // GET /api/admin/students - Get all students
-// Optional: /api/admin/students?verified=true (get only verified students)
-// Optional: /api/admin/students?verified=false (get only unverified students)
-router.get('/students', getAllStudents);
+router.get("/students", getAllStudents);
 
 // PUT /api/admin/students/:studentId/verify - Verify a student
-// Example: /api/admin/students/507f1f77bcf86cd799439011/verify
-router.put('/students/:studentId/verify', verifyStudent);
+router.put("/students/:studentId/verify", verifyStudent);
+
+// PUT /api/admin/students/:studentId/toggle-status - Toggle student active status
+router.put("/students/:studentId/toggle-status", toggleStudentStatus);
+
+// DELETE /api/admin/students/:studentId - Delete a student
+router.delete("/students/:studentId", deleteStudent);
 
 // ============================================
 // MENU MANAGEMENT ROUTES
 // ============================================
 
 // POST /api/admin/menu - Add menu for a date
-// Example request body:
-// {
-//   "date": "2026-02-03",
-//   "day": "Monday",
-//   "breakfast": {
-//     "items": ["Poha", "Tea", "Banana"],
-//     "timing": "7:00 AM - 9:00 AM"
-//   },
-//   "lunch": {
-//     "items": ["Dal", "Rice", "Roti", "Aloo Sabji"],
-//     "timing": "12:00 PM - 2:00 PM"
-//   },
-//   "snacks": {
-//     "items": ["Samosa", "Tea"],
-//     "timing": "4:00 PM - 5:00 PM"
-//   },
-//   "dinner": {
-//     "items": ["Dal", "Rice", "Roti", "Paneer"],
-//     "timing": "7:00 PM - 9:00 PM"
-//   },
-//   "specialNote": "Today's special: Gulab Jamun"
-// }
-router.post('/menu', addMenu);
+router.post("/menu", addMenu);
+
+// PUT /api/admin/menu/:menuId - Update a menu
+router.put("/menu/:menuId", updateMenu);
+
+// DELETE /api/admin/menu/:menuId - Delete a menu
+router.delete("/menu/:menuId", deleteMenu);
+
+// ============================================
+// RATINGS ROUTES
+// ============================================
+
+// GET /api/admin/ratings - Get all ratings
+router.get("/ratings", getAllRatings);
+
+// GET /api/admin/ratings/stats - Get rating statistics
+router.get("/ratings/stats", getRatingStats);
+
+// ============================================
+// COMPLAINTS ROUTES
+// ============================================
+
+// GET /api/admin/complaints - Get all complaints
+router.get("/complaints", getAllComplaints);
+
+// PUT /api/admin/complaints/:complaintId - Update complaint status
+router.put("/complaints/:complaintId", updateComplaintStatus);
+
+// ============================================
+// NOTIFICATIONS ROUTES
+// ============================================
+
+// POST /api/admin/notifications - Send notification
+router.post("/notifications", sendNotification);
+
+// GET /api/admin/notifications - Get all notifications
+router.get("/notifications", getNotifications);
+
+// ============================================
+// ATTENDANCE ROUTES
+// ============================================
+
+// GET /api/admin/attendance - Get meal attendance
+router.get("/attendance", getMealAttendance);
+
+// GET /api/admin/attendance/stats - Get attendance statistics
+router.get("/attendance/stats", getAttendanceStats);
 
 // Export the router
 module.exports = router;

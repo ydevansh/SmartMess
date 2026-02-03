@@ -11,6 +11,9 @@ console.log("Supabase Key:", supabaseKey ? "✓ Found" : "✗ Missing");
 
 const supabase = createClient(supabaseUrl || "", supabaseKey || "");
 
+// Function to get the Supabase client (for compatibility)
+const getSupabase = () => supabase;
+
 const connectDB = async () => {
   if (!supabaseUrl || !supabaseKey) {
     console.error("❌ Missing Supabase credentials in .env file");
@@ -19,4 +22,4 @@ const connectDB = async () => {
   console.log("✅ Supabase Client Initialized");
 };
 
-module.exports = { supabase, connectDB };
+module.exports = { supabase, getSupabase, connectDB };

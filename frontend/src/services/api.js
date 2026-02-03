@@ -105,4 +105,60 @@ export const userAPI = {
   getAllUsers: () => api.get("/users"),
 };
 
+// Admin Auth API
+export const adminAuthAPI = {
+  login: (credentials) => api.post("/auth/admin/login", credentials),
+  getProfile: () => api.get("/auth/profile"),
+};
+
+// Admin API
+export const adminAPI = {
+  // Dashboard Stats
+  getDashboardStats: () => api.get("/admin/stats"),
+
+  // Student Management
+  getAllStudents: (verified) =>
+    api.get("/admin/students", { params: { verified } }),
+  addStudent: (studentData) => api.post("/admin/students", studentData),
+  verifyStudent: (studentId) =>
+    api.put(`/admin/students/${studentId}/verify`),
+  deleteStudent: (studentId) => api.delete(`/admin/students/${studentId}`),
+  toggleStudentStatus: (studentId) =>
+    api.put(`/admin/students/${studentId}/toggle-status`),
+
+  // Menu Management
+  createMenu: (menuData) => api.post("/admin/menu", menuData),
+  updateMenu: (menuId, menuData) => api.put(`/admin/menu/${menuId}`, menuData),
+  deleteMenu: (menuId) => api.delete(`/admin/menu/${menuId}`),
+
+  // Ratings
+  getAllRatings: (params) => api.get("/admin/ratings", { params }),
+  getRatingStats: () => api.get("/admin/ratings/stats"),
+
+  // Complaints
+  getAllComplaints: (status) =>
+    api.get("/admin/complaints", { params: { status } }),
+  updateComplaintStatus: (complaintId, data) =>
+    api.put(`/admin/complaints/${complaintId}`, data),
+
+  // Notifications
+  sendNotification: (notificationData) =>
+    api.post("/admin/notifications", notificationData),
+  getNotifications: () => api.get("/admin/notifications"),
+
+  // Meal Attendance
+  getMealAttendance: (date, mealType) =>
+    api.get("/admin/attendance", { params: { date, mealType } }),
+  markAttendance: (attendanceData) =>
+    api.post("/admin/attendance", attendanceData),
+  getAttendanceStats: () => api.get("/admin/attendance/stats"),
+};
+
+// Complaint API (for students)
+export const complaintAPI = {
+  create: (complaintData) => api.post("/complaints", complaintData),
+  getMyComplaints: () => api.get("/complaints/my-complaints"),
+  getById: (id) => api.get(`/complaints/${id}`),
+};
+
 export default api;

@@ -3,43 +3,41 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 1rem;
+    padding: 2rem;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-@media (min-width: 1024px) {
-    .authPage {
-        grid-template-columns: 1fr 1fr;
-    }
 }
 
 .authContainer {
     display: flex;
     flex-direction: column;
-    padding: 2rem;
-    overflow-y: auto;
+    align-items: center;
+    width: 100%;
+    max-width: 500px;
 }
 
 .backLink {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    color: var(--gray-600);
+    color: rgba(255, 255, 255, 0.8);
     font-size: 0.875rem;
     font-weight: 500;
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
     transition: color var(--transition-fast);
+    align-self: flex-start;
 }
 
 .backLink:hover {
-    color: var(--primary-600);
+    color: white;
 }
 
 .authCard {
-    max-width: 420px;
+    max-width: 480px;
     width: 100%;
-    margin: auto;
-    padding: 2rem;
+    padding: 2.5rem;
+    position: relative;
+    overflow: hidden;
+    border-radius: 1.5rem;
 }
 
 .authCard::before {
@@ -50,11 +48,15 @@
     width: 200%;
     height: 200%;
     background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
 }
 
 .authHeader {
     text-align: center;
     margin-bottom: 2rem;
+    position: relative;
+    z-index: 1;
 }
 
 .emoji {
@@ -78,12 +80,16 @@
     display: flex;
     flex-direction: column;
     gap: 1.25rem;
+    position: relative;
+    z-index: 1;
 }
 
 .row {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1rem;
+    position: relative;
+    z-index: 1;
 }
 
 @media (max-width: 500px) {
@@ -97,6 +103,8 @@
     margin-top: 1.5rem;
     color: var(--text-secondary, #6b7280);
     font-size: 0.875rem;
+    position: relative;
+    z-index: 1;
 }
 
 .authLink {
@@ -132,6 +140,8 @@
     width: 200%;
     height: 200%;
     background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
 }
 
 .authSideContent {
@@ -158,6 +168,8 @@
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+    position: relative;
+    z-index: 1;
 }
 
 .inputGroup label {
@@ -184,6 +196,125 @@
     color: var(--text-muted, #9ca3af);
 }
 
+/* Input Icon */
+.inputIcon {
+    width: 14px;
+    height: 14px;
+    margin-right: 0.5rem;
+    vertical-align: middle;
+}
+
+/* Button Row */
+.buttonRow {
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+.buttonRow button {
+    flex: 1;
+}
+
+/* Auth Divider */
+.authDivider {
+    display: flex;
+    align-items: center;
+    margin: 1.5rem 0;
+    position: relative;
+    z-index: 1;
+}
+
+.authDivider::before,
+.authDivider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--gray-200, #e5e7eb);
+}
+
+.authDivider span {
+    padding: 0 1rem;
+    color: var(--text-muted, #9ca3af);
+    font-size: 0.875rem;
+}
+
+/* Progress Steps */
+.progressSteps {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 2rem;
+    position: relative;
+    z-index: 1;
+}
+
+.step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.step span:first-child {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--gray-200, #e5e7eb);
+    color: var(--gray-500, #6b7280);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.875rem;
+    transition: all 0.3s ease;
+}
+
+.step p {
+    font-size: 0.75rem;
+    color: var(--gray-500, #6b7280);
+    margin: 0;
+}
+
+.step.active span:first-child {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.step.active p {
+    color: var(--text-primary, #1f2937);
+    font-weight: 500;
+}
+
+.stepLine {
+    width: 40px;
+    height: 2px;
+    background: var(--gray-200, #e5e7eb);
+    margin: 0 0.5rem;
+    margin-bottom: 1.5rem;
+    transition: background 0.3s ease;
+}
+
+.stepLine.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* Admin Link */
+.adminLink {
+    margin-top: 1.5rem;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.875rem;
+}
+
+.adminLink a {
+    color: white;
+    font-weight: 600;
+}
+
+.adminLink a:hover {
+    text-decoration: underline;
+}
+
 .footer {
     text-align: center;
     margin-top: 1.5rem;
@@ -199,4 +330,53 @@
 
 .footer a:hover {
     text-decoration: underline;
+}
+
+/* Header alias for backwards compatibility */
+.header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.header h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-primary, #1f2937);
+    margin-bottom: 0.5rem;
+}
+
+.header p {
+    color: var(--text-secondary, #6b7280);
+}
+
+/* Form alias */
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+/* Error Message */
+.errorMessage {
+    background-color: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #dc2626;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    animation: shake 0.5s ease-in-out;
+}
+
+.errorMessage::before {
+    content: '⚠️';
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
 }

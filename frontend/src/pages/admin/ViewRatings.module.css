@@ -1,138 +1,223 @@
 .page {
-    max-width: 900px;
+  padding: 1.5rem;
 }
 
 .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
 }
 
 .header h1 {
-    font-size: 1.75rem;
-    font-weight: 700;
-    color: #111827;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
 }
 
 .header p {
-    color: #6b7280;
-    font-size: 0.875rem;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
 }
 
-.filterCard {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 1rem 1.5rem !important;
-    margin-bottom: 1.5rem;
-    flex-wrap: wrap;
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
 }
 
-.filterIcon {
-    color: #6b7280;
+.statCard {
+  text-align: center;
+  padding: 1.25rem;
 }
 
-.filterButtons {
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
+.statMeal {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+  text-transform: capitalize;
+}
+
+.statInfo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.statValue {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.statLabel {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.starDisplay {
+  display: flex;
+  justify-content: center;
+  gap: 0.25rem;
+}
+
+.starFilled {
+  color: #f59e0b;
+  fill: #f59e0b;
+}
+
+.starEmpty {
+  color: #d1d5db;
+}
+
+.filters {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  color: var(--text-secondary);
+  flex-wrap: wrap;
 }
 
 .filterBtn {
-    padding: 0.5rem 1rem;
-    background: #f3f4f6;
-    border: none;
-    border-radius: 9999px;
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: #4b5563;
-    cursor: pointer;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--border-color);
+  background: var(--bg-primary);
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--text-secondary);
 }
 
 .filterBtn:hover {
-    background: #e5e7eb;
+  border-color: var(--primary);
+  color: var(--primary);
 }
 
 .filterBtn.active {
-    background: #22c55e;
-    color: white;
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.ratingsCard {
+  padding: 0;
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  color: var(--text-secondary);
+  gap: 1rem;
 }
 
 .ratingsList {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
+  display: flex;
+  flex-direction: column;
 }
 
-.ratingCard {
-    padding: 1.25rem !important;
+.ratingItem {
+  padding: 1.25rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.ratingItem:last-child {
+  border-bottom: none;
 }
 
 .ratingHeader {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 1rem;
-    flex-wrap: wrap;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .studentInfo {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .avatar {
-    width: 40px;
-    height: 40px;
-    background: linear-gradient(135deg, #4ade80, #16a34a);
-    color: white;
-    border-radius: 9999px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 600;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 1rem;
 }
 
-.studentInfo h4 {
-    font-weight: 600;
-    color: #111827;
+.studentName {
+  display: block;
+  font-weight: 600;
+  color: var(--text-primary);
 }
 
-.studentInfo span {
-    font-size: 0.75rem;
-    color: #6b7280;
+.studentRoll {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
 }
 
 .ratingMeta {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
-.mealBadge {
-    padding: 0.25rem 0.75rem;
-    background: #dcfce7;
-    color: #15803d;
-    font-size: 0.75rem;
-    font-weight: 600;
-    border-radius: 9999px;
-    text-transform: capitalize;
+.ratingDate {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.ratingContent {
+  padding-left: 52px;
+}
+
+.stars {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 0.5rem;
 }
 
 .comment {
-    margin-top: 1rem;
-    padding: 1rem;
-    background: #f9fafb;
-    border-radius: 0.5rem;
-    color: #4b5563;
-    font-style: italic;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  font-style: italic;
+  line-height: 1.5;
 }
 
-.date {
-    display: block;
+@media (max-width: 640px) {
+  .page {
+    padding: 1rem;
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .ratingContent {
+    padding-left: 0;
     margin-top: 0.75rem;
-    font-size: 0.75rem;
-    color: #9ca3af;
+  }
+
+  .ratingMeta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
 }

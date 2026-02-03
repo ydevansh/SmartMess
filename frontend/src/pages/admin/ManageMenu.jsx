@@ -4,14 +4,26 @@ import { FiPlus, FiTrash2, FiSave, FiCalendar } from "react-icons/fi";
 import AdminLayout from "../../components/layout/AdminLayout";
 import Card from "../../components/ui/Card";
 import Button from "../../components/ui/Button";
+import Loader from "../../components/ui/Loader";
+import { adminAPI, menuAPI } from "../../services/api";
 import toast from "react-hot-toast";
 import styles from "./ManageMenu.module.css";
 
 const MEAL_TYPES = ["breakfast", "lunch", "snacks", "dinner"];
 
+const DAYS_OF_WEEK = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+];
+
 const ManageMenu = () => {
   const [selectedDate, setSelectedDate] = useState(
-    format(new Date(), "yyyy-MM-dd"),
+    format(new Date(), "yyyy-MM-dd")
   );
   const [menu, setMenu] = useState({
     breakfast: [],
@@ -26,15 +38,48 @@ const ManageMenu = () => {
     dinner: "",
   });
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [existingMenuId, setExistingMenuId] = useState(null);
 
   useEffect(() => {
-    setMenu({
-      breakfast: ["Poha", "Chai", "Bread Butter"],
-      lunch: ["Rice", "Dal", "Paneer Curry", "Roti"],
-      snacks: ["Samosa", "Tea"],
-      dinner: ["Chapati", "Mix Veg", "Dal Fry"],
-    });
+    fetchMenuForDate();
   }, [selectedDate]);
+
+  const fetchMenuForDate = async () => {
+    setLoading(true);
+    try {
+      const response = await menuAPI.getMenuByDate(selectedDate);
+      if (response.data.success && response.data.menu) {
+        const menuData = response.data.menu;
+        setMenu({
+          breakfast: menuData.breakfast || [],
+          lunch: menuData.lunch || [],
+          snacks: menuData.snacks || [],
+          dinner: menuData.dinner || [],
+        });
+        setExistingMenuId(menuData.id);
+      } else {
+        setMenu({
+          breakfast: [],
+          lunch: [],
+          snacks: [],
+          dinner: [],
+        });
+        setExistingMenuId(null);
+      }
+    } catch (error) {
+      // No menu for this date
+      setMenu({
+        breakfast: [],
+        lunch: [],
+        snacks: [],
+        dinner: [],
+      });
+      setExistingMenuId(null);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleAddItem = (mealType) => {
     const item = newItems[mealType].trim();
@@ -51,14 +96,31 @@ const ManageMenu = () => {
   };
 
   const handleSaveMenu = async () => {
-    setLoading(true);
+    setSaving(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      toast.success("Menu saved successfully!");
+      const date = new Date(selectedDate);
+      const day = DAYS_OF_WEEK[date.getDay()];
+
+      const menuData = {
+        date: selectedDate,
+        day,
+        breakfast: menu.breakfast,
+        lunch: menu.lunch,
+        snacks: menu.snacks,
+        dinner: menu.dinner,
+      };
+
+      const response = await adminAPI.createMenu(menuData);
+
+      if (response.data.success) {
+        toast.success("Menu saved successfully!");
+        setExistingMenuId(response.data.data.id);
+      }
     } catch (error) {
       toast.error("Failed to save menu");
+      console.error("Save menu error:", error);
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
@@ -69,6 +131,24 @@ const ManageMenu = () => {
     }
   };
 
+  const getMealIcon = (mealType) => {
+    const icons = {
+      breakfast: "🌅",
+      lunch: "☀️",
+      snacks: "🍪",
+      dinner: "🌙",
+    };
+    return icons[mealType] || "🍽️";
+  };
+
+  if (loading) {
+    return (
+      <AdminLayout>
+        <Loader fullScreen />
+      </AdminLayout>
+    );
+  }
+
   return (
     <AdminLayout>
       <div className={styles.page}>
@@ -77,7 +157,7 @@ const ManageMenu = () => {
             <h1>Manage Menu</h1>
             <p>Add or edit daily menu items</p>
           </div>
-          <Button icon={FiSave} onClick={handleSaveMenu} loading={loading}>
+          <Button icon={FiSave} onClick={handleSaveMenu} loading={saving}>
             Save Menu
           </Button>
         </header>
@@ -93,13 +173,19 @@ const ManageMenu = () => {
           <span className={styles.dateLabel}>
             {format(new Date(selectedDate), "EEEE, MMMM d, yyyy")}
           </span>
+          {existingMenuId && (
+            <span className={styles.existingBadge}>Menu Exists</span>
+          )}
         </Card>
 
         <div className={styles.mealsGrid}>
           {MEAL_TYPES.map((mealType) => (
             <Card key={mealType} className={styles.mealCard}>
               <div className={styles.mealHeader}>
-                <h3>{mealType.charAt(0).toUpperCase() + mealType.slice(1)}</h3>
+                <h3>
+                  {getMealIcon(mealType)}{" "}
+                  {mealType.charAt(0).toUpperCase() + mealType.slice(1)}
+                </h3>
                 <span className={styles.itemCount}>
                   {menu[mealType].length} items
                 </span>

@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
-import { format, startOfWeek, addDays } from "date-fns";
+import { format, parseISO, startOfWeek, addDays } from "date-fns";
 import Layout from "../components/layout/Layout";
 import Card from "../components/ui/Card";
 import Loader from "../components/ui/Loader";
+import Button from "../components/ui/Button";
+import { menuAPI } from "../services/api";
 import styles from "./WeeklyMenu.module.css";
 
 const mealIcons = {
@@ -23,22 +25,62 @@ const WeeklyMenu = () => {
 
   const fetchWeeklyMenu = async () => {
     try {
-      // Mock data - replace with actual API call
+      const response = await menuAPI.getWeeklyMenu();
+      if (response.data.success && response.data.menus) {
+        // Transform API data to our format
+        const menus = response.data.menus.map((menu) => ({
+          id: menu.id,
+          date: parseISO(menu.date),
+          dayName: menu.day,
+          meals: {
+            breakfast: menu.breakfast || [],
+            lunch: menu.lunch || [],
+            snacks: menu.snacks || [],
+            dinner: menu.dinner || [],
+          },
+        }));
+        setWeeklyMenu(menus);
+        
+        // Set selected day to today if available
+        const today = new Date().toISOString().split('T')[0];
+        const todayIndex = menus.findIndex(m => 
+          format(m.date, 'yyyy-MM-dd') === today
+        );
+        if (todayIndex !== -1) {
+          setSelectedDay(todayIndex);
+        }
+      } else {
+        // If no menus, create empty week structure
+        const startDate = startOfWeek(new Date(), { weekStartsOn: 1 });
+        const emptyWeek = Array.from({ length: 7 }, (_, i) => ({
+          id: `empty-${i}`,
+          date: addDays(startDate, i),
+          dayName: format(addDays(startDate, i), "EEEE"),
+          meals: {
+            breakfast: [],
+            lunch: [],
+            snacks: [],
+            dinner: [],
+          },
+        }));
+        setWeeklyMenu(emptyWeek);
+      }
+    } catch (error) {
+      console.error("Failed to fetch weekly menu:", error);
+      // Create empty week on error
       const startDate = startOfWeek(new Date(), { weekStartsOn: 1 });
-      const mockMenu = Array.from({ length: 7 }, (_, i) => ({
-        _id: `menu${i}`,
+      const emptyWeek = Array.from({ length: 7 }, (_, i) => ({
+        id: `empty-${i}`,
         date: addDays(startDate, i),
         dayName: format(addDays(startDate, i), "EEEE"),
         meals: {
-          breakfast: ["Poha", "Chai", "Bread", "Fruits"],
-          lunch: ["Rice", "Dal", "Sabzi", "Roti", "Salad"],
-          snacks: ["Samosa", "Tea"],
-          dinner: ["Chapati", "Curry", "Dal", "Rice"],
+          breakfast: [],
+          lunch: [],
+          snacks: [],
+          dinner: [],
         },
       }));
-      setWeeklyMenu(mockMenu);
-    } catch (error) {
-      console.error("Failed to fetch weekly menu:", error);
+      setWeeklyMenu(emptyWeek);
     } finally {
       setLoading(false);
     }
@@ -52,6 +94,9 @@ const WeeklyMenu = () => {
     );
   }
 
+  const selectedMenu = weeklyMenu[selectedDay];
+  const hasItems = selectedMenu && Object.values(selectedMenu.meals).some(items => items && items.length > 0);
+
   return (
     <Layout>
       <div className={styles.page}>
@@ -64,7 +109,7 @@ const WeeklyMenu = () => {
         <div className={styles.dayTabs}>
           {weeklyMenu.map((day, index) => (
             <button
-              key={day._id}
+              key={day.id}
               className={`${styles.dayTab} ${selectedDay === index ? styles.active : ""}`}
               onClick={() => setSelectedDay(index)}
             >
@@ -75,34 +120,48 @@ const WeeklyMenu = () => {
         </div>
 
         {/* Selected Day Menu */}
-        {weeklyMenu[selectedDay] && (
+        {selectedMenu && (
           <div className={styles.dayMenu}>
             <h2 className={styles.selectedDayTitle}>
-              {weeklyMenu[selectedDay].dayName}
-              <span>{format(weeklyMenu[selectedDay].date, "MMM d")}</span>
+              {selectedMenu.dayName}
+              <span>{format(selectedMenu.date, "MMM d")}</span>
             </h2>
 
-            <div className={styles.mealsGrid}>
-              {Object.entries(weeklyMenu[selectedDay].meals).map(
-                ([mealType, items]) => (
-                  <Card key={mealType} className={styles.mealCard}>
-                    <div className={styles.mealHeader}>
-                      <span className={styles.mealIcon}>
-                        {mealIcons[mealType]}
-                      </span>
-                      <h3>
-                        {mealType.charAt(0).toUpperCase() + mealType.slice(1)}
-                      </h3>
-                    </div>
-                    <ul className={styles.itemList}>
-                      {items.map((item, i) => (
-                        <li key={i}>{item}</li>
-                      ))}
-                    </ul>
-                  </Card>
-                ),
-              )}
-            </div>
+            {hasItems ? (
+              <div className={styles.mealsGrid}>
+                {Object.entries(selectedMenu.meals).map(
+                  ([mealType, items]) => (
+                    <Card key={mealType} className={styles.mealCard}>
+                      <div className={styles.mealHeader}>
+                        <span className={styles.mealIcon}>
+                          {mealIcons[mealType]}
+                        </span>
+                        <h3>
+                          {mealType.charAt(0).toUpperCase() + mealType.slice(1)}
+                        </h3>
+                      </div>
+                      {items && items.length > 0 ? (
+                        <ul className={styles.itemList}>
+                          {items.map((item, i) => (
+                            <li key={i}>{item}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className={styles.noItems}>Not available</p>
+                      )}
+                    </Card>
+                  ),
+                )}
+              </div>
+            ) : (
+              <Card className={styles.noMenuCard}>
+                <div className={styles.noMenu}>
+                  <span className={styles.noMenuIcon}>📅</span>
+                  <h3>No Menu Available</h3>
+                  <p>Menu for this day hasn't been uploaded yet.</p>
+                </div>
+              </Card>
+            )}
           </div>
         )}
       </div>

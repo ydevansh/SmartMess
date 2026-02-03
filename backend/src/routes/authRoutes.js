@@ -5,11 +5,19 @@ const jwt = require("jsonwebtoken");
 const { supabase } = require("../config/database");
 
 const JWT_SECRET = process.env.JWT_SECRET || "smartmess_fallback_secret";
+const JWT_EXPIRES_IN = "7d";
 
 const generateToken = (user, role) => {
   return jwt.sign({ id: user.id, email: user.email, role }, JWT_SECRET, {
-    expiresIn: "7d",
+    expiresIn: JWT_EXPIRES_IN,
   });
+};
+
+// Calculate token expiry date
+const getExpiresAt = () => {
+  const date = new Date();
+  date.setDate(date.getDate() + 7); // 7 days from now
+  return date.toISOString();
 };
 
 // REGISTER
@@ -69,7 +77,7 @@ router.post("/register", async (req, res) => {
           hostel_name: hostelName,
           room_number: roomNumber,
           phone_number: phoneNumber,
-          is_verified: true,
+          is_verified: false,
           is_active: true,
         },
       ])
@@ -81,18 +89,16 @@ router.post("/register", async (req, res) => {
       return res.status(400).json({ success: false, message: error.message });
     }
 
-    const token = generateToken(student, "student");
-
+    // Don't give token on registration - student needs admin approval first
     res.status(201).json({
       success: true,
-      message: "Registration successful!",
-      token,
+      message: "Registration successful! Please wait for admin approval to access the portal.",
+      requiresApproval: true,
       user: {
         id: student.id,
         name: student.name,
         email: student.email,
         rollNumber: student.roll_number,
-        role: "student",
       },
     });
   } catch (error) {
@@ -132,12 +138,34 @@ router.post("/login", async (req, res) => {
         .json({ success: false, message: "Invalid credentials" });
     }
 
+    // Check if student is verified (approved by admin)
+    if (!student.is_verified) {
+      return res.status(403).json({
+        success: false,
+        message: "Your account is pending approval. Please wait for admin to approve your access.",
+        pendingApproval: true,
+        user: {
+          name: student.name,
+          email: student.email,
+        },
+      });
+    }
+
+    // Check if student is active
+    if (!student.is_active) {
+      return res.status(403).json({
+        success: false,
+        message: "Your account has been deactivated. Please contact admin.",
+      });
+    }
+
     const token = generateToken(student, "student");
 
     res.json({
       success: true,
       message: "Login successful!",
       token,
+      expiresAt: getExpiresAt(),
       user: {
         id: student.id,
         name: student.name,
@@ -181,6 +209,7 @@ router.post("/admin/login", async (req, res) => {
     res.json({
       success: true,
       token,
+      expiresAt: getExpiresAt(),
       user: {
         id: admin.id,
         name: admin.name,
@@ -224,6 +253,57 @@ router.get("/me", async (req, res) => {
         name: user.name,
         email: user.email,
         rollNumber: user.roll_number,
+        role: decoded.role,
+      },
+    });
+  } catch (error) {
+    res.status(401).json({ success: false, message: "Invalid token" });
+  }
+});
+
+// LOGOUT
+router.post("/logout", (req, res) => {
+  // Since we're using JWT, logout is handled client-side by removing the token
+  // This endpoint just confirms the logout action
+  res.json({
+    success: true,
+    message: "Logged out successfully",
+  });
+});
+
+// GET PROFILE (alias for /me)
+router.get("/profile", async (req, res) => {
+  try {
+    const auth = req.headers.authorization;
+    if (!auth?.startsWith("Bearer ")) {
+      return res.status(401).json({ success: false, message: "No token" });
+    }
+
+    const decoded = jwt.verify(auth.split(" ")[1], JWT_SECRET);
+    const table = decoded.role === "admin" ? "admins" : "students";
+
+    const { data: user } = await supabase
+      .from(table)
+      .select("*")
+      .eq("id", decoded.id)
+      .single();
+
+    if (!user) {
+      return res
+        .status(401)
+        .json({ success: false, message: "User not found" });
+    }
+
+    res.json({
+      success: true,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        rollNumber: user.roll_number,
+        hostelName: user.hostel_name,
+        roomNumber: user.room_number,
+        phoneNumber: user.phone_number,
         role: decoded.role,
       },
     });

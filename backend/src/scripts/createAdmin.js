@@ -1,7 +1,4 @@
-const mongoose = require("mongoose");
-const Admin = require("../models/Admin");
 require("dotenv").config();
-
 const bcrypt = require("bcryptjs");
 const { createClient } = require("@supabase/supabase-js");
 
@@ -13,9 +10,9 @@ const supabase = createClient(
 const createAdmin = async () => {
   try {
     const adminData = {
-      name: "Admin",
-      email: "admin@smartmess.com",
-      password: "admin123",
+      name: "Gaurav Kumar",
+      email: "gkumaryadav526@gmail.com",
+      password: "gaurav@hack",
       phone_number: "9999999999",
       role: "superadmin",
     };
@@ -30,7 +27,7 @@ const createAdmin = async () => {
     if (existing) {
       console.log("⚠️  Admin already exists!");
       console.log("📧 Email:", adminData.email);
-      console.log("🔑 Password: admin123");
+      console.log("🔑 Password: gaurav@hack");
       process.exit(0);
     }
 

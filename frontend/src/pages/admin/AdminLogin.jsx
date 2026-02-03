@@ -11,6 +11,7 @@ const AdminLogin = () => {
   const [formData, setFormData] = useState({ email: '', password: '' })
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState({})
+  const [loginError, setLoginError] = useState('')
   
   const { adminLogin, isAuthenticated, isAdmin } = useAuth()
   const navigate = useNavigate()
@@ -25,6 +26,8 @@ const AdminLogin = () => {
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }))
     }
+    // Clear login error when user starts typing
+    if (loginError) setLoginError('')
   }
 
   const validate = () => {
@@ -38,15 +41,24 @@ const AdminLogin = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    setLoginError('')
     if (!validate()) return
 
     setLoading(true)
     try {
-      await adminLogin(formData.email, formData.password)
-      toast.success('Welcome, Admin! 🛡️')
-      navigate('/admin/dashboard')
+      const response = await adminLogin(formData.email, formData.password)
+      if (response.data.success) {
+        toast.success('Welcome, Admin! 🛡️')
+        navigate('/admin/dashboard', { replace: true })
+      } else {
+        const errorMsg = response.data.message || 'Invalid admin credentials'
+        setLoginError(errorMsg)
+        toast.error(errorMsg)
+      }
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Invalid admin credentials')
+      const errorMsg = error.response?.data?.message || 'Invalid admin credentials'
+      setLoginError(errorMsg)
+      toast.error(errorMsg)
     } finally {
       setLoading(false)
     }
@@ -69,13 +81,19 @@ const AdminLogin = () => {
           </div>
 
           <form onSubmit={handleSubmit} className={styles.form}>
+            {loginError && (
+              <div className={styles.errorMessage}>
+                {loginError}
+              </div>
+            )}
+            
             <Input
               label="Admin Email"
               type="email"
               name="email"
               value={formData.email}
               onChange={handleChange}
-              placeholder="admin@smartmess.com"
+              placeholder="gkumaryadav526@gmail.com"
               icon={FiMail}
               error={errors.email}
             />

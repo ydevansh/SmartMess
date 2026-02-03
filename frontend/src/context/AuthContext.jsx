@@ -5,7 +5,7 @@ import {
   useEffect,
   useCallback,
 } from "react";
-import { authAPI } from "../services/api";
+import { authAPI, adminAuthAPI } from "../services/api";
 
 const AuthContext = createContext(null);
 
@@ -84,6 +84,28 @@ export const AuthProvider = ({ children }) => {
     [saveAuth],
   );
 
+  // Admin Login function
+  const adminLogin = useCallback(
+    async (email, password) => {
+      const response = await adminAuthAPI.login({ email, password });
+
+      if (response.data.success) {
+        const authData = {
+          token: response.data.token,
+          expiresAt: response.data.expiresAt,
+          user: response.data.user,
+        };
+
+        saveAuth(authData);
+        setToken(authData.token);
+        setUser(authData.user);
+      }
+
+      return response;
+    },
+    [saveAuth],
+  );
+
   // Register function
   const register = useCallback(
     async (userData) => {
@@ -133,6 +155,7 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated,
     isAdmin,
     login,
+    adminLogin,
     register,
     logout,
   };

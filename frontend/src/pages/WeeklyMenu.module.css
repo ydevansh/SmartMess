@@ -141,3 +141,34 @@
     left: 0;
     color: var(--primary-500);
 }
+
+.noItems {
+    color: var(--gray-400);
+    font-size: 0.875rem;
+    font-style: italic;
+}
+
+.noMenuCard {
+    padding: 3rem;
+}
+
+.noMenu {
+    text-align: center;
+    padding: 2rem;
+}
+
+.noMenuIcon {
+    font-size: 3rem;
+    display: block;
+    margin-bottom: 1rem;
+}
+
+.noMenu h3 {
+    font-size: 1.25rem;
+    color: var(--gray-700);
+    margin-bottom: 0.5rem;
+}
+
+.noMenu p {
+    color: var(--gray-500);
+}

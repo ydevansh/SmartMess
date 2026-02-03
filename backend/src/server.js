@@ -26,11 +26,16 @@ connectDB();
 const authRoutes = require("./routes/authRoutes");
 const menuRoutes = require("./routes/menuRoutes");
 const ratingRoutes = require("./routes/ratingRoutes");
+const adminRoutes = require("./routes/adminRoutes");
+const studentRoutes = require("./routes/studentRoutes");
 
 // Step 6: Use Routes
-app.use("/api/auth", authRoutes); // All admin routes will start with /api/admin
-app.use("/api/menu", menuRoutes); // All student routes will start with /api/student
-app.use("/api/ratings", ratingRoutes);
+app.use("/api/auth", authRoutes); // All auth routes will start with /api/auth
+app.use("/api/menu", menuRoutes); // All menu routes will start with /api/menu
+app.use("/api/ratings", ratingRoutes); // All rating routes will start with /api/ratings
+app.use("/api/admin", adminRoutes); // All admin routes will start with /api/admin
+app.use("/api/student", studentRoutes); // All student routes will start with /api/student
+app.use("/api/complaints", studentRoutes); // Alias for complaint routes
 
 // Step 7: Test Route - Check if server is working
 app.get("/", (req, res) => {

@@ -2,6 +2,9 @@
 
 const express = require('express');
 const router = express.Router();
+const jwt = require('jsonwebtoken');
+
+const JWT_SECRET = process.env.JWT_SECRET || "smartmess_fallback_secret";
 
 // Import controller functions
 const {
@@ -12,6 +15,21 @@ const {
   submitComplaint,
   getMyComplaints
 } = require('../controllers/studentController');
+
+// Auth middleware to get user from token
+const authMiddleware = (req, res, next) => {
+  try {
+    const auth = req.headers.authorization;
+    if (!auth?.startsWith("Bearer ")) {
+      return res.status(401).json({ success: false, message: "No token provided" });
+    }
+    const decoded = jwt.verify(auth.split(" ")[1], JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch (error) {
+    return res.status(401).json({ success: false, message: "Invalid token" });
+  }
+};
 
 // ============================================
 // MENU ROUTES
@@ -45,23 +63,50 @@ router.get('/menu/weekly', getWeeklyMenu);
 router.post('/rating', submitRating);
 
 // ============================================
-// COMPLAINT ROUTES
+// COMPLAINT ROUTES (for /api/student/...)
 // ============================================
 
-// POST /api/student/complaint - Submit a complaint
-// Request body:
-// {
-//   "studentId": "uuid-here",
-//   "category": "food_quality",  // or hygiene, service, quantity, other
-//   "subject": "Cold food",
-//   "description": "Food was cold and not fresh",
-//   "priority": "medium"         // optional: low, medium, high
-// }
-router.post('/complaint', submitComplaint);
+// POST /api/student/complaint - Submit a complaint (legacy)
+router.post('/complaint', authMiddleware, submitComplaint);
 
-// GET /api/student/complaints/:studentId - Get all complaints by a student
-// URL parameter: studentId
+// GET /api/student/complaints/:studentId - Get all complaints by a student (legacy)
 router.get('/complaints/:studentId', getMyComplaints);
+
+// ============================================
+// COMPLAINT ROUTES (for /api/complaints/... alias)
+// ============================================
+
+// POST /api/complaints - Submit a new complaint (frontend expects this)
+router.post('/', authMiddleware, submitComplaint);
+
+// GET /api/complaints/my-complaints - Get logged-in user's complaints
+router.get('/my-complaints', authMiddleware, async (req, res) => {
+  // Call getMyComplaints with the user id from token
+  req.params.studentId = req.user.id;
+  return getMyComplaints(req, res);
+});
+
+// GET /api/complaints/:id - Get a specific complaint
+router.get('/:id', authMiddleware, async (req, res) => {
+  try {
+    const { getSupabase } = require('../config/database');
+    const supabase = getSupabase();
+    
+    const { data: complaint, error } = await supabase
+      .from('complaints')
+      .select('*')
+      .eq('id', req.params.id)
+      .single();
+    
+    if (error || !complaint) {
+      return res.status(404).json({ success: false, message: 'Complaint not found' });
+    }
+    
+    res.json({ success: true, data: complaint });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
 
 // Export the router
 module.exports = router;
