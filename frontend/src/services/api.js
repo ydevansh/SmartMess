@@ -145,10 +145,12 @@ export const adminAPI = {
   sendNotification: (notificationData) =>
     api.post("/admin/notifications", notificationData),
   getNotifications: () => api.get("/admin/notifications"),
+  deleteNotification: (notificationId) =>
+    api.delete(`/admin/notifications/${notificationId}`),
 
   // Meal Attendance
-  getMealAttendance: (date, mealType) =>
-    api.get("/admin/attendance", { params: { date, mealType } }),
+  getMealAttendance: (params) =>
+    api.get("/admin/attendance", { params }),
   markAttendance: (attendanceData) =>
     api.post("/admin/attendance", attendanceData),
   getAttendanceStats: () => api.get("/admin/attendance/stats"),
@@ -159,6 +161,23 @@ export const complaintAPI = {
   create: (complaintData) => api.post("/complaints", complaintData),
   getMyComplaints: () => api.get("/complaints/my-complaints"),
   getById: (id) => api.get(`/complaints/${id}`),
+};
+
+// Student Attendance API
+export const attendanceAPI = {
+  markAttendance: (data) => api.post("/student/attendance", data),
+  getMyAttendance: (studentId, params) => 
+    api.get(`/student/attendance/${studentId}`, { params }),
+  getTodayStatus: (studentId) => 
+    api.get(`/student/attendance/today/${studentId}`),
+};
+
+// Student Notifications API
+export const notificationAPI = {
+  getAll: () => api.get("/student/notifications"),
+  markAsRead: (notificationId) => 
+    api.put(`/student/notifications/${notificationId}/read`),
+  getUnreadCount: () => api.get("/student/notifications/unread-count"),
 };
 
 export default api;

@@ -20,6 +20,7 @@ const {
   updateComplaintStatus,
   sendNotification,
   getNotifications,
+  deleteNotification,
   getMealAttendance,
   getAttendanceStats,
 } = require("../controllers/adminController");
@@ -92,6 +93,9 @@ router.post("/notifications", sendNotification);
 
 // GET /api/admin/notifications - Get all notifications
 router.get("/notifications", getNotifications);
+
+// DELETE /api/admin/notifications/:notificationId - Delete notification
+router.delete("/notifications/:notificationId", deleteNotification);
 
 // ============================================
 // ATTENDANCE ROUTES

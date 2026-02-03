@@ -19,6 +19,9 @@ import WeeklyMenu from "./pages/WeeklyMenu";
 import RateMeal from "./pages/RateMeal";
 import MyRatings from "./pages/MyRatings";
 import Profile from "./pages/Profile";
+import Complaints from "./pages/Complaints";
+import Attendance from "./pages/Attendance";
+import Notifications from "./pages/Notifications";
 
 // Admin Pages
 import AdminLogin from "./pages/admin/AdminLogin";
@@ -158,6 +161,30 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <Profile />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/complaints"
+        element={
+          <ProtectedRoute>
+            <Complaints />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/attendance"
+        element={
+          <ProtectedRoute>
+            <Attendance />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/notifications"
+        element={
+          <ProtectedRoute>
+            <Notifications />
           </ProtectedRoute>
         }
       />

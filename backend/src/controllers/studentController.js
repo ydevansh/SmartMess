@@ -348,6 +348,310 @@ const getMyComplaints = async (req, res) => {
 };
 
 // ============================================
+// 7. MEAL ATTENDANCE FUNCTIONS
+// ============================================
+
+// Mark attendance for a meal
+const markMealAttendance = async (req, res) => {
+  try {
+    const supabase = getSupabase();
+    const { studentId, date, mealType, status } = req.body;
+
+    if (!studentId || !date || !mealType || !status) {
+      return res.status(400).json({
+        success: false,
+        message: 'studentId, date, mealType, and status are required'
+      });
+    }
+
+    // Validate meal type
+    const validMealTypes = ['breakfast', 'lunch', 'snacks', 'dinner'];
+    if (!validMealTypes.includes(mealType)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid meal type'
+      });
+    }
+
+    // Validate status
+    if (!['present', 'absent'].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Status must be present or absent'
+      });
+    }
+
+    // Upsert attendance (insert or update)
+    const { data: attendance, error } = await supabase
+      .from('meal_attendance')
+      .upsert({
+        student_id: studentId,
+        date,
+        meal_type: mealType,
+        status,
+        marked_at: new Date().toISOString()
+      }, {
+        onConflict: 'student_id,date,meal_type'
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.status(200).json({
+      success: true,
+      message: `Attendance marked as ${status} for ${mealType}`,
+      data: attendance
+    });
+
+  } catch (error) {
+    console.error('Error in markMealAttendance:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error marking attendance',
+      error: error.message
+    });
+  }
+};
+
+// Get my attendance history
+const getMyAttendance = async (req, res) => {
+  try {
+    const supabase = getSupabase();
+    const { studentId } = req.params;
+    const { startDate, endDate } = req.query;
+
+    let query = supabase
+      .from('meal_attendance')
+      .select('*')
+      .eq('student_id', studentId)
+      .order('date', { ascending: false });
+
+    if (startDate) {
+      query = query.gte('date', startDate);
+    }
+    if (endDate) {
+      query = query.lte('date', endDate);
+    }
+
+    const { data: attendance, error } = await query;
+
+    if (error) throw error;
+
+    res.status(200).json({
+      success: true,
+      count: attendance.length,
+      data: attendance
+    });
+
+  } catch (error) {
+    console.error('Error in getMyAttendance:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching attendance',
+      error: error.message
+    });
+  }
+};
+
+// Get today's attendance status for a student
+const getTodayAttendanceStatus = async (req, res) => {
+  try {
+    const supabase = getSupabase();
+    const { studentId } = req.params;
+    
+    // Use local date instead of UTC to avoid timezone issues
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    
+    console.log('📅 Fetching attendance for date:', today, 'studentId:', studentId);
+
+    const { data: attendance, error } = await supabase
+      .from('meal_attendance')
+      .select('*')
+      .eq('student_id', studentId)
+      .eq('date', today);
+
+    if (error) throw error;
+
+    // Create a map of meal type to status
+    const statusMap = {};
+    const mealTypes = ['breakfast', 'lunch', 'snacks', 'dinner'];
+    
+    mealTypes.forEach(type => {
+      const record = (attendance || []).find(a => a.meal_type === type);
+      statusMap[type] = record ? record.status : null;
+    });
+
+    res.status(200).json({
+      success: true,
+      date: today,
+      data: statusMap
+    });
+
+  } catch (error) {
+    console.error('Error in getTodayAttendanceStatus:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching attendance status',
+      error: error.message
+    });
+  }
+};
+
+// ============================================
+// 8. NOTIFICATION FUNCTIONS
+// ============================================
+
+// Get all notifications for students
+const getNotifications = async (req, res) => {
+  try {
+    const supabase = getSupabase();
+    const studentId = req.user?.id;
+
+    // Fetch all active notifications
+    const { data: notifications, error } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('is_active', true)
+      .order('created_at', { ascending: false });
+
+    // Handle case where table doesn't exist
+    if (error) {
+      if (error.code === '42P01' || error.message?.includes('does not exist')) {
+        return res.status(200).json({
+          success: true,
+          count: 0,
+          data: [],
+          message: 'No notifications table found. Please run database migrations.'
+        });
+      }
+      throw error;
+    }
+
+    // If student is logged in, also fetch read status
+    let readNotificationIds = [];
+    if (studentId) {
+      const { data: reads } = await supabase
+        .from('notification_reads')
+        .select('notification_id')
+        .eq('student_id', studentId);
+      
+      readNotificationIds = (reads || []).map(r => r.notification_id);
+    }
+
+    // Add isRead flag to each notification
+    const notificationsWithStatus = (notifications || []).map(n => ({
+      ...n,
+      isRead: readNotificationIds.includes(n.id)
+    }));
+
+    res.status(200).json({
+      success: true,
+      count: notifications.length,
+      data: notificationsWithStatus
+    });
+
+  } catch (error) {
+    console.error('Error in getNotifications:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching notifications',
+      error: error.message
+    });
+  }
+};
+
+// Mark notification as read
+const markNotificationRead = async (req, res) => {
+  try {
+    const supabase = getSupabase();
+    const { notificationId } = req.params;
+    const studentId = req.user?.id;
+
+    if (!studentId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Student ID required'
+      });
+    }
+
+    const { data, error } = await supabase
+      .from('notification_reads')
+      .upsert({
+        notification_id: notificationId,
+        student_id: studentId,
+        read_at: new Date().toISOString()
+      }, {
+        onConflict: 'notification_id,student_id'
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.status(200).json({
+      success: true,
+      message: 'Notification marked as read'
+    });
+
+  } catch (error) {
+    console.error('Error in markNotificationRead:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error marking notification as read',
+      error: error.message
+    });
+  }
+};
+
+// Get unread notification count
+const getUnreadCount = async (req, res) => {
+  try {
+    const supabase = getSupabase();
+    const studentId = req.user?.id;
+
+    if (!studentId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Student ID required'
+      });
+    }
+
+    // Get total notifications
+    const { count: totalCount } = await supabase
+      .from('notifications')
+      .select('*', { count: 'exact', head: true })
+      .eq('is_active', true);
+
+    // Get read notifications count
+    const { count: readCount } = await supabase
+      .from('notification_reads')
+      .select('*', { count: 'exact', head: true })
+      .eq('student_id', studentId);
+
+    const unreadCount = (totalCount || 0) - (readCount || 0);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        total: totalCount || 0,
+        read: readCount || 0,
+        unread: unreadCount > 0 ? unreadCount : 0
+      }
+    });
+
+  } catch (error) {
+    console.error('Error in getUnreadCount:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching unread count',
+      error: error.message
+    });
+  }
+};
+
+// ============================================
 // EXPORT ALL FUNCTIONS
 // ============================================
 module.exports = {
@@ -356,5 +660,13 @@ module.exports = {
   getWeeklyMenu,
   submitRating,
   submitComplaint,
-  getMyComplaints
+  getMyComplaints,
+  // Meal Attendance
+  markMealAttendance,
+  getMyAttendance,
+  getTodayAttendanceStatus,
+  // Notifications
+  getNotifications,
+  markNotificationRead,
+  getUnreadCount
 };

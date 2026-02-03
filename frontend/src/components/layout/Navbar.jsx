@@ -1,22 +1,44 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { 
-  FiHome, FiCalendar, FiStar, FiUser, FiLogOut, FiMenu, FiX 
+  FiHome, FiCalendar, FiStar, FiUser, FiLogOut, FiMenu, FiX, FiBell, FiMessageSquare, FiCheckSquare 
 } from 'react-icons/fi'
 import { MdRestaurantMenu } from 'react-icons/md'
+import { notificationAPI } from '../../services/api'
 import styles from './Navbar.module.css'
 
 const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(0)
   const { user, logout } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
+
+  useEffect(() => {
+    fetchUnreadCount()
+    // Poll for new notifications every 30 seconds
+    const interval = setInterval(fetchUnreadCount, 30000)
+    return () => clearInterval(interval)
+  }, [])
+
+  const fetchUnreadCount = async () => {
+    try {
+      const response = await notificationAPI.getUnreadCount()
+      if (response.data.success) {
+        setUnreadCount(response.data.data.unread)
+      }
+    } catch (error) {
+      // Silently fail - notifications table might not exist yet
+    }
+  }
 
   const navLinks = [
     { path: '/dashboard', label: 'Dashboard', icon: FiHome },
     { path: '/today-menu', label: "Today's Menu", icon: MdRestaurantMenu },
     { path: '/weekly-menu', label: 'Weekly Menu', icon: FiCalendar },
+    { path: '/attendance', label: 'Attendance', icon: FiCheckSquare },
+    { path: '/complaints', label: 'Complaints', icon: FiMessageSquare },
     { path: '/my-ratings', label: 'My Ratings', icon: FiStar },
   ]
 
@@ -52,6 +74,12 @@ const Navbar = () => {
 
         {/* User Menu */}
         <div className={styles.userSection}>
+          <Link to="/notifications" className={styles.notificationBtn}>
+            <FiBell />
+            {unreadCount > 0 && (
+              <span className={styles.notificationBadge}>{unreadCount}</span>
+            )}
+          </Link>
           <Link to="/profile" className={styles.userInfo}>
             <div className={styles.avatar}>
               {user?.name?.charAt(0).toUpperCase() || 'U'}

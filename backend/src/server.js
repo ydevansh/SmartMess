@@ -6,6 +6,14 @@ const express = require("express"); // Express framework for building APIs
 const cors = require("cors"); // CORS allows frontend to talk to backend
 const { connectDB } = require("./config/database"); // Our Supabase connection function
 
+// Handle uncaught errors to prevent server crash
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+});
+process.on('unhandledRejection', (err) => {
+  console.error('Unhandled Rejection:', err);
+});
+
 // Step 2: Create Express app
 const app = express();
 
@@ -28,6 +36,12 @@ const menuRoutes = require("./routes/menuRoutes");
 const ratingRoutes = require("./routes/ratingRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const studentRoutes = require("./routes/studentRoutes");
+
+// Debug middleware to log all requests - MUST be before routes
+app.use((req, res, next) => {
+  console.log(`📥 ${req.method} ${req.originalUrl}`);
+  next();
+});
 
 // Step 6: Use Routes
 app.use("/api/auth", authRoutes); // All auth routes will start with /api/auth

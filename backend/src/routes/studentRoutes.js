@@ -13,7 +13,13 @@ const {
   getWeeklyMenu,
   submitRating,
   submitComplaint,
-  getMyComplaints
+  getMyComplaints,
+  markMealAttendance,
+  getMyAttendance,
+  getTodayAttendanceStatus,
+  getNotifications,
+  markNotificationRead,
+  getUnreadCount
 } = require('../controllers/studentController');
 
 // Auth middleware to get user from token
@@ -73,6 +79,32 @@ router.post('/complaint', authMiddleware, submitComplaint);
 router.get('/complaints/:studentId', getMyComplaints);
 
 // ============================================
+// NOTIFICATION ROUTES (must be before /:id catch-all)
+// ============================================
+
+// GET /api/student/notifications/unread-count - Get unread count (must be before :notificationId)
+router.get('/notifications/unread-count', authMiddleware, getUnreadCount);
+
+// GET /api/student/notifications - Get all notifications
+router.get('/notifications', authMiddleware, getNotifications);
+
+// PUT /api/student/notifications/:notificationId/read - Mark as read
+router.put('/notifications/:notificationId/read', authMiddleware, markNotificationRead);
+
+// ============================================
+// MEAL ATTENDANCE ROUTES
+// ============================================
+
+// POST /api/student/attendance - Mark attendance for a meal
+router.post('/attendance', authMiddleware, markMealAttendance);
+
+// GET /api/student/attendance/today/:studentId - Get today's attendance status (MUST be before /:studentId)
+router.get('/attendance/today/:studentId', authMiddleware, getTodayAttendanceStatus);
+
+// GET /api/student/attendance/:studentId - Get attendance history (catch-all, must be last)
+router.get('/attendance/:studentId', authMiddleware, getMyAttendance);
+
+// ============================================
 // COMPLAINT ROUTES (for /api/complaints/... alias)
 // ============================================
 
@@ -86,7 +118,7 @@ router.get('/my-complaints', authMiddleware, async (req, res) => {
   return getMyComplaints(req, res);
 });
 
-// GET /api/complaints/:id - Get a specific complaint
+// GET /api/complaints/:id - Get a specific complaint (MUST be last - catches all single-segment routes)
 router.get('/:id', authMiddleware, async (req, res) => {
   try {
     const { getSupabase } = require('../config/database');

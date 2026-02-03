@@ -668,13 +668,13 @@ const updateComplaintStatus = async (req, res) => {
 };
 
 // ============================================
-// NOTIFICATIONS (Simple implementation)
+// NOTIFICATIONS (Database implementation)
 // ============================================
-const notifications = []; // In-memory storage
 
 const sendNotification = async (req, res) => {
   try {
-    const { title, message, targetAudience, priority } = req.body;
+    const supabase = getSupabase();
+    const { title, message, type } = req.body;
 
     if (!title || !message) {
       return res.status(400).json({
@@ -683,20 +683,19 @@ const sendNotification = async (req, res) => {
       });
     }
 
-    const notification = {
-      id: Date.now().toString(),
-      title,
-      message,
-      targetAudience: targetAudience || "all",
-      priority: priority || "normal",
-      sentAt: new Date().toISOString(),
-    };
+    const { data: notification, error } = await supabase
+      .from("notifications")
+      .insert([{
+        title,
+        message,
+        type: type || "info",
+        target_audience: "all",
+        is_active: true
+      }])
+      .select()
+      .single();
 
-    notifications.unshift(notification);
-
-    if (notifications.length > 100) {
-      notifications.pop();
-    }
+    if (error) throw error;
 
     res.status(201).json({
       success: true,
@@ -715,6 +714,15 @@ const sendNotification = async (req, res) => {
 
 const getNotifications = async (req, res) => {
   try {
+    const supabase = getSupabase();
+
+    const { data: notifications, error } = await supabase
+      .from("notifications")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+
     res.json({
       success: true,
       count: notifications.length,
@@ -730,6 +738,32 @@ const getNotifications = async (req, res) => {
   }
 };
 
+const deleteNotification = async (req, res) => {
+  try {
+    const supabase = getSupabase();
+    const { notificationId } = req.params;
+
+    const { error } = await supabase
+      .from("notifications")
+      .delete()
+      .eq("id", notificationId);
+
+    if (error) throw error;
+
+    res.json({
+      success: true,
+      message: "Notification deleted successfully",
+    });
+  } catch (error) {
+    console.error("Error in deleteNotification:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error deleting notification",
+      error: error.message,
+    });
+  }
+};
+
 // ============================================
 // MEAL ATTENDANCE
 // ============================================
@@ -738,55 +772,91 @@ const getMealAttendance = async (req, res) => {
     const supabase = getSupabase();
     const { date, mealType } = req.query;
 
+    const queryDate = date || new Date().toISOString().split('T')[0];
+
     // Get all active students
-    const { data: students } = await supabase
+    const { data: students, error: studentsError } = await supabase
       .from("students")
-      .select("id, name, roll_number, hostel_name")
-      .eq("is_active", true);
+      .select("id, name, roll_number, hostel_name, room_number")
+      .eq("is_active", true)
+      .eq("is_verified", true);
 
-    // Get ratings for this date/meal
-    let ratingQuery = supabase.from("ratings").select("student_id, menu_id");
+    if (studentsError) {
+      console.error("Error fetching students:", studentsError);
+    }
 
-    if (date) {
-      const { data: menu } = await supabase
-        .from("menus")
-        .select("id")
-        .eq("date", date)
-        .single();
+    // Get attendance records for this date
+    let attendanceQuery = supabase
+      .from("meal_attendance")
+      .select("*")
+      .eq("date", queryDate);
 
-      if (menu) {
-        ratingQuery = ratingQuery.eq("menu_id", menu.id);
+    if (mealType) {
+      attendanceQuery = attendanceQuery.eq("meal_type", mealType);
+    }
+
+    const { data: attendanceRecords, error: attendanceError } = await attendanceQuery;
+    
+    // Handle case where table doesn't exist
+    if (attendanceError) {
+      if (attendanceError.code === '42P01' || attendanceError.message?.includes('does not exist')) {
+        console.log('meal_attendance table does not exist yet');
+      } else {
+        console.error("Error fetching attendance:", attendanceError);
       }
     }
 
-    if (mealType) {
-      ratingQuery = ratingQuery.eq("meal_type", mealType);
-    }
+    // Create attendance map
+    const attendanceMap = {};
+    (attendanceRecords || []).forEach(record => {
+      const key = `${record.student_id}_${record.meal_type}`;
+      attendanceMap[key] = record.status;
+    });
 
-    const { data: ratedStudents } = await ratingQuery;
+    // Map students with their attendance
+    const mealTypes = mealType ? [mealType] : ['breakfast', 'lunch', 'snacks', 'dinner'];
+    
+    const attendanceData = (students || []).map(student => {
+      const mealStatus = {};
+      mealTypes.forEach(type => {
+        const key = `${student.id}_${type}`;
+        mealStatus[type] = attendanceMap[key] || 'not-marked';
+      });
+      
+      return {
+        ...student,
+        attendance: mealStatus
+      };
+    });
 
-    const ratedStudentIds = new Set(
-      (ratedStudents || []).map((r) => r.student_id)
-    );
-
-    const attendanceData = (students || []).map((student) => ({
-      ...student,
-      attended: ratedStudentIds.has(student.id),
-    }));
-
+    // Calculate stats
     const totalStudents = students?.length || 0;
-    const attended = attendanceData.filter((s) => s.attended).length;
+    const stats = {};
+    
+    mealTypes.forEach(type => {
+      const present = (attendanceRecords || []).filter(
+        r => r.meal_type === type && r.status === 'present'
+      ).length;
+      const absent = (attendanceRecords || []).filter(
+        r => r.meal_type === type && r.status === 'absent'
+      ).length;
+      
+      stats[type] = {
+        present,
+        absent,
+        notMarked: totalStudents - present - absent,
+        attendanceRate: totalStudents > 0 
+          ? ((present / totalStudents) * 100).toFixed(1) 
+          : 0
+      };
+    });
 
     res.json({
       success: true,
       data: {
+        date: queryDate,
         totalStudents,
-        attended,
-        notAttended: totalStudents - attended,
-        attendanceRate:
-          totalStudents > 0
-            ? ((attended / totalStudents) * 100).toFixed(1)
-            : 0,
+        stats,
         students: attendanceData,
       },
     });
@@ -807,35 +877,38 @@ const getAttendanceStats = async (req, res) => {
     const stats = [];
     const today = new Date();
 
+    // Get total verified students
+    const { count: totalStudents } = await supabase
+      .from("students")
+      .select("*", { count: "exact", head: true })
+      .eq("is_active", true)
+      .eq("is_verified", true);
+
     for (let i = 6; i >= 0; i--) {
       const date = new Date(today);
       date.setDate(date.getDate() - i);
       const dateStr = date.toISOString().split("T")[0];
 
-      const { data: menu } = await supabase
-        .from("menus")
-        .select("id")
-        .eq("date", dateStr)
-        .single();
+      // Get attendance records for this date
+      const { data: records } = await supabase
+        .from("meal_attendance")
+        .select("meal_type, status")
+        .eq("date", dateStr);
 
-      if (menu) {
-        const { count: ratingCount } = await supabase
-          .from("ratings")
-          .select("*", { count: "exact", head: true })
-          .eq("menu_id", menu.id);
+      const mealStats = {};
+      ['breakfast', 'lunch', 'snacks', 'dinner'].forEach(type => {
+        const present = (records || []).filter(
+          r => r.meal_type === type && r.status === 'present'
+        ).length;
+        mealStats[type] = present;
+      });
 
-        stats.push({
-          date: dateStr,
-          dayName: date.toLocaleDateString("en-US", { weekday: "short" }),
-          count: ratingCount || 0,
-        });
-      } else {
-        stats.push({
-          date: dateStr,
-          dayName: date.toLocaleDateString("en-US", { weekday: "short" }),
-          count: 0,
-        });
-      }
+      stats.push({
+        date: dateStr,
+        dayName: date.toLocaleDateString("en-US", { weekday: "short" }),
+        totalStudents: totalStudents || 0,
+        ...mealStats
+      });
     }
 
     res.json({
@@ -871,6 +944,7 @@ module.exports = {
   updateComplaintStatus,
   sendNotification,
   getNotifications,
+  deleteNotification,
   getMealAttendance,
   getAttendanceStats,
 };

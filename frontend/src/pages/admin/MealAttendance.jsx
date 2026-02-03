@@ -6,7 +6,9 @@ import {
   FiChevronLeft,
   FiChevronRight,
   FiRefreshCw,
-  FiPieChart,
+  FiCheck,
+  FiX,
+  FiMinus,
 } from "react-icons/fi";
 import AdminLayout from "../../components/layout/AdminLayout";
 import Card from "../../components/ui/Card";
@@ -18,38 +20,31 @@ import styles from "./MealAttendance.module.css";
 
 const MealAttendance = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [attendance, setAttendance] = useState([]);
-  const [stats, setStats] = useState(null);
+  const [attendanceData, setAttendanceData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [selectedMeal, setSelectedMeal] = useState(null);
 
   useEffect(() => {
     fetchAttendance();
-    fetchStats();
-  }, [selectedDate]);
+  }, [selectedDate, selectedMeal]);
 
   const fetchAttendance = async () => {
     try {
       setLoading(true);
       const dateStr = format(selectedDate, "yyyy-MM-dd");
-      const response = await adminAPI.getMealAttendance({ date: dateStr });
+      const params = { date: dateStr };
+      if (selectedMeal) {
+        params.mealType = selectedMeal;
+      }
+      const response = await adminAPI.getMealAttendance(params);
       if (response.data.success) {
-        setAttendance(response.data.data);
+        setAttendanceData(response.data.data);
       }
     } catch (error) {
       toast.error("Failed to load attendance data");
+      console.error("Attendance error:", error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchStats = async () => {
-    try {
-      const response = await adminAPI.getAttendanceStats();
-      if (response.data.success) {
-        setStats(response.data.data);
-      }
-    } catch (error) {
-      console.error("Failed to load stats:", error);
     }
   };
 
@@ -78,13 +73,15 @@ const MealAttendance = () => {
     return icons[mealType] || "🍽️";
   };
 
-  const getAttendanceByMeal = (mealType) => {
-    return attendance.filter((a) => a.meal_type === mealType);
+  const getStatusIcon = (status) => {
+    if (status === "present") return <FiCheck className={styles.presentIcon} />;
+    if (status === "absent") return <FiX className={styles.absentIcon} />;
+    return <FiMinus className={styles.notMarkedIcon} />;
   };
 
   const mealTypes = ["breakfast", "lunch", "snacks", "dinner"];
 
-  if (loading && attendance.length === 0) {
+  if (loading && !attendanceData) {
     return (
       <AdminLayout>
         <Loader fullScreen />
@@ -92,43 +89,60 @@ const MealAttendance = () => {
     );
   }
 
+  const { stats = {}, students = [], totalStudents = 0 } = attendanceData || {};
+
   return (
     <AdminLayout>
       <div className={styles.page}>
         <header className={styles.header}>
           <div>
             <h1>Meal Attendance</h1>
-            <p>Track how many students will eat each meal</p>
+            <p>Track how many students will attend each meal</p>
           </div>
           <Button icon={FiRefreshCw} variant="ghost" onClick={fetchAttendance}>
             Refresh
           </Button>
         </header>
 
-        {/* Weekly Stats */}
-        {stats && (
-          <Card className={styles.statsCard}>
-            <div className={styles.statsHeader}>
-              <FiPieChart />
-              <h3>This Week's Summary</h3>
-            </div>
-            <div className={styles.statsGrid}>
-              {mealTypes.map((meal) => (
-                <div key={meal} className={styles.statItem}>
+        {/* Stats Summary */}
+        <div className={styles.statsGrid}>
+          {mealTypes.map((meal) => {
+            const mealStats = stats[meal] || { present: 0, absent: 0, notMarked: totalStudents };
+            return (
+              <Card
+                key={meal}
+                className={`${styles.statCard} ${selectedMeal === meal ? styles.selected : ""}`}
+                onClick={() => setSelectedMeal(selectedMeal === meal ? null : meal)}
+              >
+                <div className={styles.statHeader}>
                   <span className={styles.mealEmoji}>{getMealIcon(meal)}</span>
-                  <div className={styles.statInfo}>
-                    <span className={styles.statValue}>
-                      {stats[meal]?.totalResponses || 0}
-                    </span>
-                    <span className={styles.statLabel}>
-                      {meal.charAt(0).toUpperCase() + meal.slice(1)}
-                    </span>
+                  <span className={styles.mealName}>
+                    {meal.charAt(0).toUpperCase() + meal.slice(1)}
+                  </span>
+                </div>
+                <div className={styles.statNumbers}>
+                  <div className={styles.statItem}>
+                    <span className={`${styles.statValue} ${styles.present}`}>{mealStats.present}</span>
+                    <span className={styles.statLabel}>Present</span>
+                  </div>
+                  <div className={styles.statItem}>
+                    <span className={`${styles.statValue} ${styles.absent}`}>{mealStats.absent}</span>
+                    <span className={styles.statLabel}>Absent</span>
+                  </div>
+                  <div className={styles.statItem}>
+                    <span className={styles.statValue}>{mealStats.notMarked}</span>
+                    <span className={styles.statLabel}>Not Marked</span>
                   </div>
                 </div>
-              ))}
-            </div>
-          </Card>
-        )}
+                {mealStats.attendanceRate > 0 && (
+                  <div className={styles.attendanceRate}>
+                    {mealStats.attendanceRate}% Attendance
+                  </div>
+                )}
+              </Card>
+            );
+          })}
+        </div>
 
         {/* Date Selector */}
         <div className={styles.dateSelector}>
@@ -143,119 +157,114 @@ const MealAttendance = () => {
           </Button>
         </div>
 
-        {/* Attendance by Meal Type */}
-        <div className={styles.mealsGrid}>
-          {mealTypes.map((meal) => {
-            const mealAttendance = getAttendanceByMeal(meal);
-            const willEat = mealAttendance.filter((a) => a.will_eat).length;
-            const wontEat = mealAttendance.filter((a) => !a.will_eat).length;
-
-            return (
-              <Card key={meal} className={styles.mealCard}>
-                <div className={styles.mealHeader}>
-                  <span className={styles.mealEmoji}>{getMealIcon(meal)}</span>
-                  <h3>{meal.charAt(0).toUpperCase() + meal.slice(1)}</h3>
-                </div>
-
-                <div className={styles.attendanceStats}>
-                  <div className={styles.attendanceStat}>
-                    <div className={`${styles.statCircle} ${styles.eating}`}>
-                      <FiUsers />
-                    </div>
-                    <div>
-                      <span className={styles.attendanceValue}>{willEat}</span>
-                      <span className={styles.attendanceLabel}>Will Eat</span>
-                    </div>
-                  </div>
-                  <div className={styles.attendanceStat}>
-                    <div className={`${styles.statCircle} ${styles.notEating}`}>
-                      <FiUsers />
-                    </div>
-                    <div>
-                      <span className={styles.attendanceValue}>{wontEat}</span>
-                      <span className={styles.attendanceLabel}>Won't Eat</span>
-                    </div>
-                  </div>
-                </div>
-
-                {mealAttendance.length > 0 && (
-                  <div className={styles.studentList}>
-                    <h4>Students Eating ({willEat})</h4>
-                    <div className={styles.avatarGroup}>
-                      {mealAttendance
-                        .filter((a) => a.will_eat)
-                        .slice(0, 5)
-                        .map((a, idx) => (
-                          <div
-                            key={idx}
-                            className={styles.avatar}
-                            title={a.students?.name}
-                          >
-                            {a.students?.name?.charAt(0).toUpperCase() || "?"}
-                          </div>
-                        ))}
-                      {willEat > 5 && (
-                        <div className={styles.moreCount}>+{willEat - 5}</div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {mealAttendance.length === 0 && (
-                  <p className={styles.noData}>No responses yet</p>
-                )}
-              </Card>
-            );
-          })}
+        {/* Filter Chips */}
+        <div className={styles.filterChips}>
+          <button
+            className={`${styles.chip} ${!selectedMeal ? styles.activeChip : ""}`}
+            onClick={() => setSelectedMeal(null)}
+          >
+            All Meals
+          </button>
+          {mealTypes.map((meal) => (
+            <button
+              key={meal}
+              className={`${styles.chip} ${selectedMeal === meal ? styles.activeChip : ""}`}
+              onClick={() => setSelectedMeal(meal)}
+            >
+              {getMealIcon(meal)} {meal.charAt(0).toUpperCase() + meal.slice(1)}
+            </button>
+          ))}
         </div>
 
-        {/* Detailed List */}
-        {attendance.length > 0 && (
-          <Card className={styles.detailsCard}>
-            <h3>Detailed Responses</h3>
+        {/* Student Attendance Table */}
+        <Card className={styles.tableCard}>
+          <div className={styles.tableHeader}>
+            <h3>
+              <FiUsers /> Student Attendance
+            </h3>
+            <span className={styles.studentCount}>{totalStudents} students</span>
+          </div>
+
+          {students.length > 0 ? (
             <div className={styles.tableContainer}>
               <table className={styles.table}>
                 <thead>
                   <tr>
                     <th>Student</th>
                     <th>Roll Number</th>
-                    <th>Meal</th>
-                    <th>Status</th>
+                    <th>Hostel</th>
+                    {selectedMeal ? (
+                      <th>{selectedMeal.charAt(0).toUpperCase() + selectedMeal.slice(1)}</th>
+                    ) : (
+                      mealTypes.map((meal) => (
+                        <th key={meal}>
+                          {getMealIcon(meal)}
+                        </th>
+                      ))
+                    )}
                   </tr>
                 </thead>
                 <tbody>
-                  {attendance.map((item, idx) => (
-                    <tr key={idx}>
+                  {students.map((student) => (
+                    <tr key={student.id}>
                       <td>
                         <div className={styles.studentCell}>
-                          <div className={styles.miniAvatar}>
-                            {item.students?.name?.charAt(0).toUpperCase() || "?"}
+                          <div className={styles.avatar}>
+                            {student.name?.charAt(0).toUpperCase() || "?"}
                           </div>
-                          {item.students?.name || "Unknown"}
+                          <span>{student.name}</span>
                         </div>
                       </td>
-                      <td>{item.students?.roll_number}</td>
-                      <td>
-                        <span className={styles.mealBadge}>
-                          {getMealIcon(item.meal_type)} {item.meal_type}
-                        </span>
-                      </td>
-                      <td>
-                        <span
-                          className={`${styles.statusBadge} ${
-                            item.will_eat ? styles.eating : styles.notEating
-                          }`}
-                        >
-                          {item.will_eat ? "Will Eat" : "Won't Eat"}
-                        </span>
-                      </td>
+                      <td>{student.roll_number}</td>
+                      <td>{student.hostel_name || "-"}</td>
+                      {selectedMeal ? (
+                        <td>
+                          <span
+                            className={`${styles.statusBadge} ${
+                              styles[student.attendance?.[selectedMeal] || "notMarked"]
+                            }`}
+                          >
+                            {getStatusIcon(student.attendance?.[selectedMeal])}
+                            {student.attendance?.[selectedMeal] === "present"
+                              ? "Present"
+                              : student.attendance?.[selectedMeal] === "absent"
+                              ? "Absent"
+                              : "Not Marked"}
+                          </span>
+                        </td>
+                      ) : (
+                        mealTypes.map((meal) => (
+                          <td key={meal}>
+                            <span
+                              className={`${styles.statusIcon} ${
+                                styles[student.attendance?.[meal] || "notMarked"]
+                              }`}
+                              title={
+                                student.attendance?.[meal] === "present"
+                                  ? "Present"
+                                  : student.attendance?.[meal] === "absent"
+                                  ? "Absent"
+                                  : "Not Marked"
+                              }
+                            >
+                              {getStatusIcon(student.attendance?.[meal])}
+                            </span>
+                          </td>
+                        ))
+                      )}
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-          </Card>
-        )}
+          ) : (
+            <div className={styles.emptyState}>
+              <FiUsers size={48} />
+              <p>No students found</p>
+              <span>Students will appear here once they register and get verified</span>
+            </div>
+          )}
+        </Card>
       </div>
     </AdminLayout>
   );
