@@ -89,25 +89,31 @@ const Landing = () => {
     {
       step: "01",
       title: "Create Account",
-      description: "Sign up with your college email in just 30 seconds. No verification hassle!",
+      description: "Sign up with your college email in just 30 seconds. Fill in your details and submit!",
       icon: FiUsers,
     },
     {
       step: "02",
-      title: "Check Today's Menu",
-      description: "Open the app to see what's cooking for breakfast, lunch, snacks, and dinner.",
-      icon: FiCalendar,
+      title: "Admin Approval",
+      description: "Wait for admin confirmation (usually within 24 hours). You'll get access once approved.",
+      icon: FiShield,
     },
     {
       step: "03",
-      title: "Rate Your Meal",
-      description: "After eating, rate the meal from 1-5 stars. Add comments if you want.",
-      icon: FiStar,
+      title: "Access Dashboard",
+      description: "Once approved, login to see today's menu, weekly plans, and start rating meals.",
+      icon: FiCalendar,
     },
     {
       step: "04",
-      title: "Help Improve",
-      description: "Your ratings help mess staff know what students like. Better food for everyone!",
+      title: "Rate & Improve",
+      description: "Rate meals from 1-5 stars with comments. Your feedback helps improve food quality!",
+      icon: FiStar,
+    },
+    {
+      step: "05",
+      title: "Track History",
+      description: "View all your ratings and attendance. See trends and help make mess better for everyone!",
       icon: FiTrendingUp,
     },
   ];
@@ -140,7 +146,7 @@ const Landing = () => {
     },
     {
       question: "Can I see the menu without logging in?",
-      answer: "You need to create a free account to view menus and rate meals. It takes only 30 seconds!",
+      answer: "No, you need to create an account first. After registration and admin confirmation, you'll get full access to your dashboard, menus, ratings, and all features.",
     },
     {
       question: "Will mess staff see my ratings?",
