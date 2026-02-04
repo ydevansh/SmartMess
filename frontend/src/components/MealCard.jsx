@@ -39,19 +39,21 @@ const MealCard = ({
       <div className={styles.header}>
         <div className={styles.mealInfo}>
           <span className={styles.icon}>{mealIcons[mealType]}</span>
-          <div>
+          <div className={styles.mealDetails}>
             <h3 className={styles.title}>
               {mealType.charAt(0).toUpperCase() + mealType.slice(1)}
             </h3>
             <p className={styles.time}>
-              <FiClock /> {mealTimes[mealType]}
+              <FiClock size={14} /> {mealTimes[mealType]}
             </p>
           </div>
         </div>
-        <div className={styles.rating}>
-          <StarRating rating={averageRating} readonly size="small" />
-          <span className={styles.ratingValue}>{averageRating.toFixed(1)}</span>
-        </div>
+        {averageRating > 0 && (
+          <div className={styles.rating}>
+            <StarRating rating={averageRating} readonly size="small" />
+            <span className={styles.ratingValue}>{averageRating.toFixed(1)}</span>
+          </div>
+        )}
       </div>
 
       <div className={styles.items}>

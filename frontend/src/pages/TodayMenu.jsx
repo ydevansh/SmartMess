@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
+import { FiCalendar } from "react-icons/fi";
 import Layout from "../components/layout/Layout";
 import MealCard from "../components/MealCard";
 import Loader from "../components/ui/Loader";
@@ -39,12 +40,11 @@ const TodayMenu = () => {
     <Layout>
       <div className={styles.page}>
         <header className={styles.header}>
-          <div>
-            <h1>Today's Menu</h1>
-            <p className={styles.date}>
-              {format(new Date(), "EEEE, MMMM d, yyyy")}
-            </p>
-          </div>
+          <h1>Today's Menu</h1>
+          <p className={styles.date}>
+            <FiCalendar size={16} />
+            {format(new Date(), "EEEE, MMMM d, yyyy")}
+          </p>
         </header>
 
         {menu ? (
