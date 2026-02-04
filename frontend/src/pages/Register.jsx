@@ -200,7 +200,7 @@ const Register = () => {
                   <div className={styles.inputGroup}>
                     <label htmlFor="rollNumber">
                       <FiHash className={styles.inputIcon} />
-                      Roll Number
+                      Roll No.
                     </label>
                     <input
                       type="text"
@@ -208,7 +208,7 @@ const Register = () => {
                       name="rollNumber"
                       value={formData.rollNumber}
                       onChange={handleChange}
-                      placeholder="e.g., 21CS001"
+                      placeholder="21CS001"
                       required
                     />
                   </div>
@@ -216,7 +216,7 @@ const Register = () => {
                   <div className={styles.inputGroup}>
                     <label htmlFor="phoneNumber">
                       <FiPhone className={styles.inputIcon} />
-                      Phone Number
+                      Mobile No.
                     </label>
                     <input
                       type="tel"
@@ -224,7 +224,7 @@ const Register = () => {
                       name="phoneNumber"
                       value={formData.phoneNumber}
                       onChange={handleChange}
-                      placeholder="10-digit number"
+                      placeholder="9876543210"
                       maxLength="10"
                       required
                     />
@@ -235,7 +235,7 @@ const Register = () => {
                   <div className={styles.inputGroup}>
                     <label htmlFor="hostelName">
                       <FiHome className={styles.inputIcon} />
-                      Hostel Name
+                      Hostel
                     </label>
                     <input
                       type="text"
@@ -243,7 +243,7 @@ const Register = () => {
                       name="hostelName"
                       value={formData.hostelName}
                       onChange={handleChange}
-                      placeholder="e.g., Hostel A"
+                      placeholder="Hostel A"
                       required
                     />
                   </div>
@@ -251,7 +251,7 @@ const Register = () => {
                   <div className={styles.inputGroup}>
                     <label htmlFor="roomNumber">
                       <FiHome className={styles.inputIcon} />
-                      Room Number
+                      Room No.
                     </label>
                     <input
                       type="text"
@@ -259,7 +259,7 @@ const Register = () => {
                       name="roomNumber"
                       value={formData.roomNumber}
                       onChange={handleChange}
-                      placeholder="e.g., A-101"
+                      placeholder="A-101"
                       required
                     />
                   </div>

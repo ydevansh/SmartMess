@@ -41,7 +41,7 @@ export const AuthProvider = ({ children }) => {
           }
         }
       } catch (error) {
-        console.error("Error loading auth:", error);
+        if (import.meta.env.DEV) console.error("Error loading auth:", error);
         localStorage.removeItem(AUTH_STORAGE_KEY);
       } finally {
         setLoading(false);
@@ -133,7 +133,7 @@ export const AuthProvider = ({ children }) => {
     try {
       await authAPI.logout();
     } catch (error) {
-      console.error("Logout error:", error);
+      if (import.meta.env.DEV) console.error("Logout error:", error);
     } finally {
       localStorage.removeItem(AUTH_STORAGE_KEY);
       localStorage.removeItem("token");

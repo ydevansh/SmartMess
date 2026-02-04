@@ -19,8 +19,10 @@ const getApiUrl = () => {
 const API_BASE_URL = getApiUrl();
 const AUTH_STORAGE_KEY = "smartmess_auth";
 
-// Log API URL for debugging (remove in production if needed)
-console.log('🔗 API URL:', API_BASE_URL);
+// Log API URL only in development
+if (import.meta.env.DEV) {
+  console.log('🔗 API URL:', API_BASE_URL);
+}
 
 const api = axios.create({
   baseURL: API_BASE_URL,

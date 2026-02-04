@@ -9,7 +9,7 @@ const Layout = ({ children }) => {
         {children}
       </main>
       <footer className={styles.footer}>
-        <p>© 2024 SmartMess. Made with ❤️ for better campus dining.</p>
+        <p>© 2026 SmartMess. Made with ❤️ for better campus dining.</p>
       </footer>
     </div>
   )
